@@ -33,11 +33,13 @@ class Player(pygame.sprite.Sprite):
         self.surf = pygame.Surface((30, 30))
         self.surf.fill((255,255,0))
         self.rect = self.surf.get_rect()
-        # player position, velocity and acceleration 
+        # player position, velocity and acceleration, jump
         self.pos = vec((10, 360))
         self.vel = vec(0,0)
         self.acc = vec(0,0)
         self.jumping = False
+        # player score 
+        self.score = 0
  
     def move(self):
         ''' move player '''
@@ -77,7 +79,10 @@ class Player(pygame.sprite.Sprite):
         hits = pygame.sprite.spritecollide(self ,platforms, False)
         if self.vel.y > 0:        
             if hits:
-                if self.pos.y < hits[0].rect.bottom:               
+                if self.pos.y < hits[0].rect.bottom:
+                    if hits[0].point == True:
+                        hits[0].point = False
+                        self.score += 1          
                     self.pos.y = hits[0].rect.top +1
                     self.vel.y = 0
                     self.jumping = False
@@ -92,6 +97,8 @@ class platform(pygame.sprite.Sprite):
         # generate new platforms 
         self.rect = self.surf.get_rect(center = (random.randint(0,WIDTH-10),
                                                  random.randint(0, HEIGHT-30)))
+        self.moving = True
+        self.point = True 
  
     def move(self):
         pass
@@ -130,6 +137,8 @@ P1 = Player()
 PT1.surf = pygame.Surface((WIDTH, 20))
 PT1.surf.fill((255,0,0))
 PT1.rect = PT1.surf.get_rect(center = (WIDTH/2, HEIGHT - 10))
+PT1.moving = False
+PT1.point = True
  
 all_sprites = pygame.sprite.Group()
 all_sprites.add(PT1)
@@ -160,6 +169,17 @@ while True:
         if event.type == pygame.KEYUP:    
             if event.key == pygame.K_SPACE:
                 P1.cancel_jump()  
+
+    # game over if player falls 
+    if P1.rect.top > HEIGHT:
+        for entity in all_sprites:
+            entity.kill()
+            time.sleep(1)
+            displaysurface.fill((255,0,0))
+            pygame.display.update()
+            time.sleep(1)
+            pygame.quit()
+            sys.exit()
  
     if P1.rect.top <= HEIGHT / 3:
         P1.pos.y += abs(P1.vel.y)
@@ -170,6 +190,9 @@ while True:
  
     plat_gen()
     displaysurface.fill((0,0,0))
+    f = pygame.font.SysFont("Verdana", 20)
+    g = f.render(str(P1.score), True, (123, 255, 0))
+    displaysurface.blit(g, (WIDTH/2, 10))
      
     for entity in all_sprites:
         displaysurface.blit(entity.surf, entity.rect)
